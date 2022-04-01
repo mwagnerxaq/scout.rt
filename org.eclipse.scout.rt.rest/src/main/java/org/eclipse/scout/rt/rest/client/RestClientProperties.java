@@ -118,4 +118,12 @@ public final class RestClientProperties {
    * The name of the configuration property is <tt>{@value}</tt>.
    */
   public static final String REQUEST_URI_ENCODER = "scout.rest.client.requestUriEncoder";
+
+  /**
+   * The name of the configuration property is <tt>{@value}</tt>. FIXME PBZ javadoc / inverse property?
+   *
+   * @deprecated will be removed with release 23.0.
+   */
+  @Deprecated
+  public static final String USE_SCOUT_APACHE_CONNECTOR = "scout.rest.client.useScoutApacheConnector";
 }
