@@ -12,6 +12,7 @@ package org.eclipse.scout.rt.rest.client;
 
 import java.util.logging.Level;
 
+import org.eclipse.scout.rt.platform.config.AbstractBooleanConfigProperty;
 import org.eclipse.scout.rt.platform.util.concurrent.ICancellable;
 
 public final class RestClientProperties {
@@ -28,6 +29,20 @@ public final class RestClientProperties {
    * The name of the configuration property is <tt>{@value}</tt>.
    */
   public static final String ENABLE_COOKIES = "scout.rest.client.enableCookies";
+
+  /**
+   * Standard cookie specification used by underlying http client. See {@code org.apache.http.client.config.CookieSpecs}
+   * for details.
+   * <p>
+   * The value MUST be an instance convertible to {@link java.lang.String}.
+   * </p>
+   * <p>
+   * The default value is {@code "default"}.
+   * </p>
+   * <p>
+   * The name of the configuration property is <tt>{@value}</tt>.
+   */
+  public static final String COOKIE_SPEC = "scout.rest.client.cookieSpec";
 
   /**
    * A value of {@code true} disables chunked transfer encoding.
@@ -120,10 +135,105 @@ public final class RestClientProperties {
   public static final String REQUEST_URI_ENCODER = "scout.rest.client.requestUriEncoder";
 
   /**
-   * The name of the configuration property is <tt>{@value}</tt>. FIXME PBZ javadoc / inverse property?
+   * The property defines a URI of a HTTP proxy the client connector should use.
+   * <p>
+   * If the port component of the URI is absent then a default port of {@code 8080} is assumed. If the property absent
+   * then the default Scout ConfigurableProxySelector will be utilized.
+   * </p>
+   * <p>
+   * The value MUST be an instance of {@link String}.
+   * </p>
+   * <p>
+   * The default value is {@code null}.
+   * </p>
+   * <p>
+   * The name of the configuration property is <tt>{@value}</tt>.
+   * </p>
+   */
+  public static final String PROXY_URI = "scout.rest.client.proxy.uri";
+
+  /**
+   * The property defines a user name which will be used for HTTP proxy authentication.
+   * <p>
+   * The property is ignored if no {@link #PROXY_URI HTTP proxy URI} has been set. If the property absent then no proxy
+   * authentication will be utilized.
+   * </p>
+   * <p>
+   * The value MUST be an instance of {@link String}.
+   * </p>
+   * <p>
+   * The default value is {@code null}.
+   * </p>
+   * <p>
+   * The name of the configuration property is <tt>{@value}</tt>.
+   * </p>
+   */
+  public static final String PROXY_USERNAME = "scout.rest.client.proxy.username";
+
+  /**
+   * The property defines a user password which will be used for HTTP proxy authentication.
+   * <p>
+   * The property is ignored if no {@link #PROXY_URI HTTP proxy URI} has been set. If the property absent then no proxy
+   * authentication will be utilized.
+   * </p>
+   * <p>
+   * The value MUST be an instance of {@link String}.
+   * </p>
+   * <p>
+   * The default value is {@code null}.
+   * </p>
+   * <p>
+   * The name of the configuration property is <tt>{@value}</tt>.
+   * </p>
+   */
+  public static final String PROXY_PASSWORD = "scout.rest.client.proxy.password";
+
+  /**
+   * Automatic redirection. A value of {@code true} declares that the client will automatically redirect to the URI
+   * declared in 3xx responses.
+   * <p>
+   * The value MUST be an instance convertible to {@link java.lang.Boolean}.
+   * </p>
+   * <p>
+   * The default value is {@code true}.
+   * </p>
+   * <p>
+   * The name of the configuration property is <tt>{@value}</tt>.
+   * </p>
+   */
+  public static final String FOLLOW_REDIRECTS = "scout.rest.client.followRedirects";
+
+  /**
+   * Activates the new Scout apache connector implementation.
    *
-   * @deprecated will be removed with release 23.0.
+   * @deprecated The scout apache connector will become the default implementation with release 23.0 and this property
+   *             will be removed.
    */
   @Deprecated
   public static final String USE_SCOUT_APACHE_CONNECTOR = "scout.rest.client.useScoutApacheConnector";
+
+  /**
+   * Activates the new Scout apache connector implementation.
+   *
+   * @deprecated The scout apache connector will become the default implementation with release 23.0 and this property
+   *             will be removed.
+   */
+  @Deprecated
+  public static class UseScoutApacheConnectorProperty extends AbstractBooleanConfigProperty {
+
+    @Override
+    public String getKey() {
+      return "scout.rest.useScoutApacheConnector";
+    }
+
+    @Override
+    public Boolean getDefaultValue() {
+      return true; // FIXME PBZ REST CONNECTOR remove default value
+    }
+
+    @Override
+    public String description() {
+      return "Activates the new Scout apache connector implementation for REST clients.";
+    }
+  }
 }

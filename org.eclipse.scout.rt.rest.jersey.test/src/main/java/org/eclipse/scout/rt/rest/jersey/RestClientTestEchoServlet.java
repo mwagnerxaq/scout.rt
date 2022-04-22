@@ -13,11 +13,13 @@ package org.eclipse.scout.rt.rest.jersey;
 import static org.eclipse.scout.rt.rest.jersey.EchoServletParameters.*;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -29,6 +31,7 @@ import org.eclipse.scout.rt.dataobject.IDataObjectMapper;
 import org.eclipse.scout.rt.platform.BEANS;
 import org.eclipse.scout.rt.platform.context.CorrelationId;
 import org.eclipse.scout.rt.platform.html.HTML;
+import org.eclipse.scout.rt.platform.util.IOUtility;
 import org.eclipse.scout.rt.platform.util.IRegistrationHandle;
 import org.eclipse.scout.rt.platform.util.SleepUtil;
 import org.eclipse.scout.rt.platform.util.StringUtility;
@@ -41,6 +44,8 @@ public class RestClientTestEchoServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
 
   private static final Logger LOG = LoggerFactory.getLogger(RestClientTestEchoServlet.class);
+
+  public static final String ECHO_SERVLET_COOKIE = "echo-servlet-cookie";
 
   @Override
   protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -73,6 +78,11 @@ public class RestClientTestEchoServlet extends HttpServlet {
       resp.setHeader(CorrelationId.HTTP_HEADER_NAME, req.getHeader(CorrelationId.HTTP_HEADER_NAME));
       resp.setHeader(HttpHeaders.ACCEPT_LANGUAGE, req.getHeader(HttpHeaders.ACCEPT_LANGUAGE));
 
+      if (req.getParameter(REDIRECT_URL) != null) {
+        resp.sendRedirect(req.getParameter(REDIRECT_URL));
+        return;
+      }
+
       Status status = Status.fromStatusCode(statusCode);
       if (status != null && status.getFamily() == Status.Family.SUCCESSFUL) {
         sendEchoResponse(req, resp, statusCode, status);
@@ -92,9 +102,16 @@ public class RestClientTestEchoServlet extends HttpServlet {
     resp.setStatus(statusCode);
     resp.setContentType(MediaType.APPLICATION_JSON);
 
+    String cookieValue = req.getParameter(COOKIE_VALUE);
+    if (cookieValue != null) {
+      resp.addCookie(new Cookie(ECHO_SERVLET_COOKIE, cookieValue));
+    }
+
     if (req.getParameter(EMPTY_BODY) != null) {
       return;
     }
+
+    String body = IOUtility.readString(req.getInputStream(), StandardCharsets.UTF_8.name());
 
     Map<String, String> receivedHeaders = new HashMap<>();
     for (Enumeration<String> headerNames = req.getHeaderNames(); headerNames.hasMoreElements();) {
@@ -106,7 +123,8 @@ public class RestClientTestEchoServlet extends HttpServlet {
         .withEcho(BEANS.get(RestClientTestEchoDo.class)
             .withHttpMethod(req.getMethod())
             .withCode(statusCode)
-            .withInfo(status == null ? "unknown" : status.getReasonPhrase()))
+            .withInfo(status == null ? "unknown" : status.getReasonPhrase())
+            .withBody(body))
         .withReceivedHeaders(receivedHeaders);
 
     if (req.getParameter(LARGE_MESSAGE) != null) {
