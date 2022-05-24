@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import org.eclipse.scout.rt.platform.Order;
 import org.eclipse.scout.rt.platform.annotations.ConfigOperation;
@@ -392,7 +393,7 @@ public abstract class AbstractCodeTypeWithGeneric<CODE_TYPE_ID, CODE_ID, CODE ex
 
   protected void rebuildCodeIndexMap() {
     m_codeIndexMap = new HashMap<>();
-    ICodeVisitor<ICode<CODE_ID>> v = new ICodeVisitor<ICode<CODE_ID>>() {
+    ICodeVisitor<ICode<CODE_ID>> v = new ICodeVisitor<>() {
       private int m_index = 0;
 
       @Override
@@ -443,11 +444,12 @@ public abstract class AbstractCodeTypeWithGeneric<CODE_TYPE_ID, CODE_ID, CODE ex
     // 1a add configured codes
     List<? extends CODE> createdList = interceptCreateCodes();
     if (createdList != null) {
-      for (CODE code : createdList) {
+      visit(createdList, (ICodeVisitor<CODE>) (code, treeLevel) -> {
         allCodesOrdered.add(code);
         idToCodeMap.put(code.getId(), code);
-        codeToParentCodeMap.put(code, null);
-      }
+        codeToParentCodeMap.put(code, Optional.ofNullable(code.getParentCode()).map(ICode::getId).map(idToCodeMap::get).orElse(null));
+        return true;
+      }, false);
     }
     // 1b add dynamic codes
     List<? extends ICodeRow<CODE_ID>> result = interceptLoadCodes(getConfiguredCodeRowType());
@@ -585,10 +587,14 @@ public abstract class AbstractCodeTypeWithGeneric<CODE_TYPE_ID, CODE_ID, CODE ex
     return visit(visitor, true);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <T extends ICode<CODE_ID>> boolean visit(ICodeVisitor<T> visitor, boolean activeOnly) {
-    for (CODE code : getCodes(activeOnly)) {
+    return visit(getCodes(activeOnly), visitor, activeOnly);
+  }
+
+  @SuppressWarnings("unchecked")
+  protected <T extends ICode<CODE_ID>> boolean visit(List<? extends CODE> codes, ICodeVisitor<T> visitor, boolean activeOnly) {
+    for (CODE code : codes) {
       if (!visitor.visit((T) code, 0)) {
         return false;
       }
